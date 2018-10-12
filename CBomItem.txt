@@ -1,0 +1,82 @@
+Private quantityInt As Integer
+Private markSt As String
+Private sizeSt As String
+Private descriptionSt As String
+Private lengthSt As String
+Private sameLengthSt As Boolean
+Private sameQuantitySt As Boolean
+Private sameDescriptionSt As Boolean
+Private foundst As Boolean
+
+ 
+Property Get Quantity() As Integer
+    Quantity = quantityInt
+End Property
+
+Property Let Quantity(value As Integer)
+    quantityInt = value
+End Property
+
+Property Get Mark() As String
+    Mark = markSt
+End Property
+
+Property Let Mark(value As String)
+   markSt = value
+End Property
+
+Property Get Size() As String
+    Size = sizeSt
+End Property
+
+Property Let Size(value As String)
+    sizeSt = value
+End Property
+
+Property Get Description() As String
+    Description = descriptionSt
+End Property
+
+Property Let Description(value As String)
+    descriptionSt = value
+End Property
+
+Property Get Length() As String
+    Length = lengthSt
+End Property
+
+Property Let Length(value As String)
+    lengthSt = value
+End Property
+
+Property Get SameLength() As Boolean
+    SameLength = sameLengthSt
+End Property
+
+Property Let SameLength(value As Boolean)
+    sameLengthSt = value
+End Property
+
+Property Get SameQuantity() As Boolean
+    SameQuantity = sameQuantitySt
+End Property
+
+Property Let SameQuantity(value As Boolean)
+    sameQuantitySt = value
+End Property
+
+Property Get SameDescription() As Boolean
+    SameDescription = sameDescriptionSt
+End Property
+
+Property Let SameDescription(value As Boolean)
+    sameDescriptionSt = value
+End Property
+
+Property Get Found() As Boolean
+    Found = foundst
+End Property
+
+Property Let Found(value As Boolean)
+    foundst = value
+End Property

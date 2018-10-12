@@ -1,0 +1,372 @@
+Dim bomColl As Collection
+Dim totalBomColl As New Collection
+Dim removedItem As New Collection
+Dim newItem As New Collection
+Dim bomItem As CBomItem
+Dim wb As Workbook
+Dim ws As Worksheet
+Dim bomItemCount As Long
+Dim numOfItem As Integer
+Dim numOfBOM As Integer
+
+Sub Run()
+'Counts the BOM's in the spreadsheet
+'Starts the program
+    
+    Application.ScreenUpdating = False
+    Set wb = ActiveWorkbook
+    Set ws = wb.Sheets("Results")
+    
+    ws.Activate
+    ws.UsedRange.ClearFormats
+    ws.UsedRange.ClearContents
+    
+    Set ws = wb.Sheets("BOM")
+    ws.Activate
+    
+    Dim i As Integer
+    numOfBOM = 0
+    i = 1
+
+    While Not IsEmpty(Cells(2, i))
+        numOfBOM = numOfBOM + 1
+        i = i + 6
+    Wend
+    
+    Call LoadBOM(numOfBOM)
+    Debug.Print (numOfBOM)
+    Call DescriptionComparison
+    Call CreateRemovedItemList
+    Call PrintResults
+    Debug.Print vbLf
+    Application.ScreenUpdating = True
+'    For Each item In totalBomColl(1)
+'        MsgBox item.description
+'    Next
+
+    Set bomColl = Nothing
+    Set totalBomColl = Nothing
+    Set removedItem = Nothing
+    Set newItem = Nothing
+    
+
+End Sub
+
+Sub LoadBOM(value1 As Integer)
+    'Loads the newest BOM's into a collection, from left to right in spreadshet
+    'Comparisons are made against the first bom loaded in
+    
+    Dim rowCount, i, k As Integer
+    Dim item As CBomItem
+    
+    
+    i = 0
+    k = 1
+    
+    numOfBOM = value1
+    
+    While i < numOfBOM
+        Set bomColl = New Collection
+        rowCount = Application.WorksheetFunction.CountA(Columns(Cells(2, k)))
+        
+        For j = 2 To rowCount
+            Set bomItem = New CBomItem
+            bomItem.Mark = ws.Cells(j, k).value
+            bomItem.Quantity = Int(ws.Cells(j, k + 1).value)
+            bomItem.Size = ws.Cells(j, k + 2).value
+            bomItem.Description = ws.Cells(j, k + 3).value
+            bomItem.Length = ws.Cells(j, k + 4).value
+            bomItem.SameLength = False
+            bomItem.SameQuantity = False
+            bomItem.SameDescription = False
+            
+            
+            bomItem.Description = MatchString(bomItem.Description)
+            bomColl.Add bomItem, Str(j - 1)
+            
+        Next
+        
+        totalBomColl.Add bomColl
+        i = i + 1
+        k = k + 6
+    Wend
+    
+End Sub
+
+Sub DescriptionComparison()
+'Searches for item in 1st list with every following list
+'If not found, calls additem sub
+'if found calls check quantity sub
+
+    Dim Found As Boolean
+    Dim bomCompareTo As CBomItem
+    Dim bomCompareWith As CBomItem
+
+    For i = 2 To totalBomColl.Count
+        For j = 1 To totalBomColl(1).Count
+            For k = 1 To totalBomColl(i).Count
+                If totalBomColl(1)(j).Description = totalBomColl(i)(k).Description Then
+                    totalBomColl(1)(j).Found = True
+                    totalBomColl(1)(j).SameDescription = True
+                    Set bomCompareTo = totalBomColl(1)(j)
+                    Set bomCompareWith = totalBomColl(i)(k)
+                    Call CheckQuantity(bomCompareTo, bomCompareWith)
+                    GoTo NextBOM
+                End If
+            Next k
+            
+            If totalBomColl(1)(j).Found = False Then
+                Debug.Print "Added new item"
+                totalBomColl(1)(j).SameDescription = False
+                newItem.Add totalBomColl(1)(j)
+            End If
+NextBOM:
+        Next j
+    Next i
+
+End Sub
+
+
+Sub CheckQuantity(bomCompareTo As CBomItem, bomCompareWith As CBomItem)
+'Checks the quantity of both materials, and determines if their the same
+'If the material is pipe, checks the length
+
+    Dim bom1 As CBomItem
+    Dim bom2 As CBomItem
+    Dim bom1Length As Integer
+    Dim bom2Length As Integer
+    
+    Set bom1 = bomCompareTo
+    Set bom2 = bomCompareWith
+    
+    
+    'need to change to case statements
+    
+    If InStr(1, bom1.Description, "NIPPLE") Or InStr(1, bom1.Description, "STUD BOLTS") Or Left(bom1.Description, 4) = "PIPE" Or InStr(1, bom1.Description, "VALVE") Then
+    
+        If Left(bom1.Description, 4) = "PIPE" Then
+            Debug.Print "PIPE"
+            If bom1.Length = bom2.Length Then
+                bom1.SameLength = True
+                bom1.SameQuantity = True
+            Else
+                bom1.SameLength = False
+                bom1.SameQuantity = True
+            End If
+            Exit Sub
+        End If
+    
+        
+        If InStr(1, bom1.Description, "NIPPLE") Then
+            Debug.Print ("NIPPLE")
+            If bom1.Length = bom2.Length Then
+               bom1.SameLength = True
+            Else
+               bom1.SameLength = False
+            End If
+                
+            If bom1.Quantity = bom2.Quantity Then
+               bom1.SameQuantity = True
+            Else
+               bom1.SameQuantity = False
+            End If
+            Exit Sub
+        End If
+            
+            
+        If InStr(1, bom1.Description, "STUD BOLTS") Then
+            Debug.Print ("STUD BOLTS")
+            If bom1.Length = bom2.Length Then
+               bom1.SameLength = True
+            Else
+               bom1.SameLength = False
+            End If
+                
+            If bom1.Quantity = bom2.Quantity Then
+               bom1.SameQuantity = True
+            Else
+               bom1.SameQuantity = False
+            End If
+            Exit Sub
+        End If
+        
+        If InStr(1, bom1.Description, "VALVE") Then
+            Debug.Print ("VALVE")
+            If bom1.Length = bom2.Length Then
+               bom1.SameLength = True
+            Else
+               bom1.SameLength = False
+            End If
+                
+            If bom1.Quantity = bom2.Quantity Then
+               bom1.SameQuantity = True
+            Else
+               bom1.SameQuantity = False
+            End If
+            Exit Sub
+        End If
+ 
+ 'Need to return to this
+    Else
+        If bom1.Quantity = bom2.Quantity Then
+            bom1.SameQuantity = True
+        Else
+            bom1.SameQuantity = False
+        End If
+        
+        If bom1.Length = bom2.Length Then
+            bom1.SameLength = True
+        Else
+            bom1.SameLength = False
+        End If
+    End If
+End Sub
+
+Function MatchString(Description As String) As String
+'Occaisonally CADWORX will add 0's to the end of a dimensiton ie 12.0000
+'Finds those zeros, and kills them with fire
+'Inspired by code from stackoverflow u/Portland Runner
+    Dim strPattern As String: strPattern = "([0-9]+)\.[0]{4}"
+    Dim strReplace As String: strReplace = "$1"
+    Dim strInput As String
+    Dim newString As String
+
+    strInput = Description
+    
+    Set Regex = CreateObject("VBScript.RegExp")
+    
+    With Regex
+        .Global = True
+        .MultiLine = False
+        .IgnoreCase = False
+        .Pattern = strPattern
+    End With
+    
+    If Regex.Test(strInput) Then
+        newString = (Regex.Replace(strInput, strReplace))
+    Else
+        newString = strInput
+    End If
+    
+    MatchString = newString
+    
+    Set Regex = Nothing
+    
+End Function
+
+Sub CreateRemovedItemList()
+'Searches for item in 1st list with every following list
+'If not found, calls additem sub
+'if found calls check quantity sub
+
+     For i = 2 To totalBomColl.Count
+        For j = 1 To totalBomColl(i).Count
+            For k = 1 To totalBomColl(1).Count
+                If totalBomColl(i)(j).Description = totalBomColl(1)(k).Description Then
+                    totalBomColl(i)(j).Found = True
+                    GoTo NextItem
+                End If
+            Next k
+
+            If totalBomColl(i)(j).Found = False Then
+                Debug.Print "Item Removed"
+                removedItem.Add totalBomColl(i)(j)
+            End If
+NextItem:
+        Next j
+    Next i
+
+End Sub
+
+Sub PrintResults()
+'Prints results to results tab
+    Dim k As Integer
+    Dim item As CBomItem
+    Dim lastRow As Integer
+    
+    ActiveWorkbook.Sheets("Results").Select
+    
+    k = 1
+    
+    For i = 1 To totalBomColl.Count
+        Cells(1, k).value = "MARK"
+        Cells(1, k + 1).value = "QTY"
+        Cells(1, k + 2).value = "SIZE"
+        Cells(1, k + 3).value = "DESCRIPTION"
+        Cells(1, k + 4).value = "LENGTH"
+        k = k + 6
+    Next i
+    
+    k = 1
+    
+    For i = 1 To totalBomColl.Count
+        For j = 1 To totalBomColl(i).Count
+            Cells(j + 1, k).value = totalBomColl(i)(j).Mark
+            Cells(j + 1, k + 1).value = totalBomColl(i)(j).Quantity
+            Cells(j + 1, k + 2).value = totalBomColl(i)(j).Size
+            Cells(j + 1, k + 3).value = totalBomColl(i)(j).Description
+            Cells(j + 1, k + 4).value = totalBomColl(i)(j).Length
+            Set item = totalBomColl(i)(j)
+            
+            If (i = 1) Then
+                Call CheckStatus(item, k, j)
+            End If
+            
+        Next j
+        k = k + 6
+    Next i
+    
+    k = 1
+    
+    lastRow = totalBomColl(1).Count
+    Cells(lastRow + 5, k) = "New Items in BOM 1"
+    Cells(lastRow + 5, k).Style = "Heading 3"
+    
+    For Each item In newItem
+        Cells(lastRow + 6, k) = item.Mark
+        Cells(lastRow + 6, k + 1) = item.Quantity
+        Cells(lastRow + 6, k + 2) = item.Size
+        Cells(lastRow + 6, k + 3) = item.Description
+        Cells(lastRow + 6, k + 4) = item.Length
+            
+        lastRow = lastRow + 1
+    Next item
+  
+    k = k + 6
+    
+    lastRow = totalBomColl(2).Count
+    Cells(lastRow + 5, k) = "Items Removed in BOM 1"
+    Cells(lastRow + 5, k).Style = "Heading 3"
+    
+    For Each item In removedItem
+        Cells(lastRow + 6, k) = item.Mark
+        Cells(lastRow + 6, k + 1) = item.Quantity
+        Cells(lastRow + 6, k + 2) = item.Size
+        Cells(lastRow + 6, k + 3) = item.Description
+        Cells(lastRow + 6, k + 4) = item.Length
+            
+        lastRow = lastRow + 1
+    Next item
+        
+End Sub
+
+Sub CheckStatus(item As CBomItem, valueK As Integer, valueJ)
+    Dim k As Integer
+    k = valueK
+    j = valueJ
+    
+    If (item.SameQuantity = False) Then
+        Cells(j + 1, k + 1).Style = "Bad"
+    End If
+    
+    If (item.SameDescription = False) Then
+        Cells(j + 1, k + 3).Style = "Bad"
+    End If
+    
+    If (item.SameLength = False) Then
+        Cells(j + 1, k + 4).Style = "Bad"
+    End If
+
+    Debug.Print "Item Checked"
+    
+End Sub
